@@ -9,8 +9,9 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 from time import sleep
-
-
+import numpy as np
+import matplotlib 
+import matplotlib.pyplot as plt
 url = "https://elections2019.belgium.be/en/results-figures?el=CK&id=CKR00000"
 r = requests.get(url, verify = False)
 soup = BeautifulSoup(r.text, "html.parser")
@@ -140,6 +141,7 @@ muni_urls10 = get_urls(flat_list10)
 def get_results(muni_urls_list):
     df_return = pd.DataFrame()
     for url in muni_urls_list:
+        print(url)
         r = requests.get(url, verify = False)
         soup = BeautifulSoup(r.text, "html.parser")
         name_h2 = soup.findAll("h2", attrs = {"class" : "article-dataheader__title"})
@@ -163,15 +165,25 @@ results7 = get_results(muni_urls7)
 results8 = get_results(muni_urls8)
 results9 = get_results(muni_urls9)
 results10 = get_results(muni_urls10)
+
+muni_urls11 = muni_urls7[0:27]
+muni_urls12 = muni_urls7[27:len(muni_urls7)+1] 
+results11 = get_results(muni_urls11)
+results12 = get_results(muni_urls12)
+
+
+#now put them all together!
+final = pd.concat([results1, results2, results3, results4, results5, 
+                   results6, results8, results9, 
+                   results10, results11, results12])
+
+#get the relevant columns and write to csv
     
-        
-
-
+final = final[["Party","2019","2014","%2019","%2014","municipality"]] 
+    
+final.to_csv("C:/Users/dapon/Dropbox/Harvard/Noah_SunYoung/data/belgium/belgium_municipality_2014_2019.csv")
 
     
-results = full_df[["Party","2019","2014","%2019","%2014","municipality"]]
-    
-
 
  
 
