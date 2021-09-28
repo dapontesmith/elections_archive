@@ -9,23 +9,24 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 from time import sleep
-import numpy as np
-import matplotlib 
-import matplotlib.pyplot as plt
+
+#set initial url for the entire kingdom
 url = "https://elections2019.belgium.be/en/results-figures?el=CK&id=CKR00000"
 r = requests.get(url, verify = False)
 soup = BeautifulSoup(r.text, "html.parser")
 options = soup.find_all("option")
+#get links in the constituency drop-down
 constit_links = []
 for option in options:
     constit_links.append(option["value"])
 #remove the unneccessary links 
 constit_links = constit_links[3:]
 
+#set lin prefix
 url_prefix = "https://elections2019.belgium.be"
-district_links = []#link = constit_links[0]
+district_links = []
 
-#get all the links of districts 
+#get all the links of districts from drop-downs in each constituency
 for link in constit_links: 
     url = url_prefix + link 
     r = requests.get(url, verify = False)
@@ -40,22 +41,27 @@ district_links = [i for i in district_links if i]
 district_links = district_links[1:]
 
 
-
+#define function for getting links of municipalities from each district link
 def get_muni_links(start_num, end_num):
+    #define empty holder
     muni_links = []
+    #set prefix
     url_prefix = "https://elections2019.belgium.be"
     for suffix in district_links[start_num : end_num]:
+        #exclude foreign-affairs and whole-kingdom links
         if "999" not in suffix and "0000" not in suffix:
             print(suffix)
             link = url_prefix + suffix
             r = requests.get(link, verify = False)
             soup = BeautifulSoup(r.text, "html.parser")
             divs = soup.findAll("div", attrs = {"class" : "evolution-graphs"})
+            #get the main link on the page 
             main_link = []
             for div in divs:
                 for a in div: 
                     if a.get("href") != None: 
                         main_link.append(url_prefix + a.get("href"))
+            #now query the main link and get the municipal links from there 
             r = requests.get(main_link[0], verify = False)
             soup = BeautifulSoup(r.text, "html.parser")
             options = soup.findAll("select", attrs = {"id" : "navigation1"})
@@ -63,20 +69,20 @@ def get_muni_links(start_num, end_num):
                 htmls = (option.find_all("option"))
                 for html in htmls:
                     muni_links.append(html["value"])
+    #eliminate duplicate municipality links by doing this - a bit roundabout
     muni_links_unique = []
     for x in range(len(muni_links)):
         print(x)
         if "CKX" in muni_links[x]:
             muni_links_unique.append(muni_links[x])
     sleep(5)
+    #return the list of unique links 
     return muni_links_unique
 
 
 ################################
-    #GET muniicpal links in separate lists
+    #put muniicpal links in separate lists
     #i do this to avoid getting SSL errors when I run the scraping
-    
-
 muni_links_full1 = []
 muni_links_full1.append(get_muni_links(0, 11))
 muni_links_full2 = []
@@ -155,6 +161,7 @@ def get_results(muni_urls_list):
         sleep(5)
     return df_return
 
+
 results1 = get_results(muni_urls1)
 results2 = get_results(muni_urls2)
 results3 = get_results(muni_urls3)
@@ -166,6 +173,7 @@ results8 = get_results(muni_urls8)
 results9 = get_results(muni_urls9)
 results10 = get_results(muni_urls10)
 
+#had to do this to deal with the SSL errors 
 muni_urls11 = muni_urls7[0:27]
 muni_urls12 = muni_urls7[27:len(muni_urls7)+1] 
 results11 = get_results(muni_urls11)
